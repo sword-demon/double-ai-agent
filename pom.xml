@@ -16,6 +16,7 @@
     <name>double-ai-agent</name>
     <modules>
         <module>ai-transfer</module>
+        <module>ai-common</module>
     </modules>
 
     <properties>
