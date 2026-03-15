@@ -1,66 +1,62 @@
-# Repository Guidelines
+# AGENTS.md
 
-## Project Structure & Module Organization
+This file provides guidance to `init-architect` (init-architect.ai/code) when working with code in this repository.
 
-This repository is currently a **parent Maven project**. The root `pom.xml` centralizes dependency versions, annotation
-processor setup, and shared build conventions. At the moment, the repository contains only root-level project files such
-as `pom.xml`, `README.md`, and `LICENSE`.
+## Build Commands
 
-When feature modules are added, keep a clear multi-module layout:
+```bash
+mvn clean install                 # Full build, install all modules to local repo
+mvn -pl ai-transfer test          # Run tests for a single module
+mvn -pl ai-transfer spring-boot:run  # Start the ai-transfer application (port 8876)
+mvn validate                      # Verify parent build configuration
+```
 
-- `double-ai-agent-web/` – Spring Boot entrypoints and HTTP APIs
-- `double-ai-agent-core/` – agent orchestration and domain logic
-- `double-ai-agent-infra/` – external integrations and persistence
-- `src/main/java` and `src/test/java` inside each module
+Requires JDK 17+ and Maven 3.9+.
 
-Use lowercase package names under `top.wjstar` and keep module names prefixed with `double-ai-agent-`.
+## Architecture
 
-## Build, Test, and Development Commands
+Multi-module Maven project (`top.wjstar:double-ai-agent`) for AI Agent applications.
 
-- `mvn validate` — verifies the parent build configuration and dependency management
-- `mvn test` — runs module tests once test sources are added
-- `mvn clean install` — performs a full clean build and installs artifacts locally
-- `mvn -pl "module-name" test` — runs tests for a single module after modules exist
+```
+double-ai-agent/                  (parent POM - version/dependency management)
+├── ai-common/                    (shared utilities, no Spring Boot dependency)
+│   └── R<T>                      (unified API response wrapper, top.wjstar.common.domain.vo)
+└── ai-transfer/                  (Spring Boot application, port 8876)
+    └── TransferApp.java          (@MapperScan on top.wjstar.transfer.mapper)
+```
 
-Run commands from the repository root unless you are working inside a specific module.
+### ai-transfer Module Layers
 
-## Coding Style & Naming Conventions
+Package: `top.wjstar.transfer`
 
-Use **Java 17+** conventions and keep code simple and explicit.
+```
+model/         → MyBatis Plus entities (@TableName, @TableId AUTO)
+mapper/        → MyBatis Plus mappers (extend BaseMapper<T>)
+service/base/  → Service implementations (extend ServiceImpl, annotated @Service)
+service/base/impl/ → Service interfaces (extend IService<T>)
+```
 
-- Indentation: 4 spaces, no tabs
-- Class names: `UpperCamelCase`
-- Methods and fields: `lowerCamelCase`
-- Constants: `UPPER_SNAKE_CASE`
-- Packages: lowercase, dot-separated
+**Note**: The interface/impl package naming is inverted from typical convention -- interfaces are in `impl/`,
+implementations are in the parent `base/` package.
 
-Prefer Lombok only where it reduces clear boilerplate. Use MapStruct for DTO mappings instead of handwritten repetitive
-converters. Keep classes focused on one responsibility.
+MyBatis XML mappers: `src/main/resources/mapperxml/`
 
-## Testing Guidelines
+### Database
 
-Place tests under `src/test/java` in the corresponding module. Name test classes `*Test` and mirror the package
-structure of production code. Add focused unit tests for every new service, mapper, or utility with meaningful
-assertions.
+MySQL database `ai_transfer`, configured in `ai-transfer/src/main/resources/application.yml`. Six `bb_` prefixed tables:
+product, warehouse, inventory, sales_record, transfer_order, transfer_order_item.
 
-Before opening a PR, run `mvn test` or the narrowest relevant module command.
+### Key Tech Stack Versions
 
-## Commit & Pull Request Guidelines
+Spring Boot 3.3.4 | Spring AI 1.0.3 | Spring AI Alibaba 1.0.0.4 | MyBatis Plus 3.5.14 | MapStruct 1.6.2 | Hutool 5.8.23
 
-Follow the existing **Conventional Commits** pattern seen in history, for example:
+Lombok and MapStruct annotation processors are configured in the parent `maven-compiler-plugin`.
 
-- `chore(config): add parent pom setup`
-- `feat(core): add agent executor`
-- `fix(web): handle empty prompt`
+## Conventions
 
-PRs should include:
-
-- a short summary of the change
-- impacted modules or paths
-- test evidence (`mvn test`, module-specific test output, or manual verification)
-- linked issue, if applicable
-
-## Security & Configuration Tips
-
-Do not commit secrets, API keys, or environment-specific config. Once runtime modules are added, keep local overrides in
-untracked files such as `application-local.yml` or use environment variables.
+- **Commit style**: Conventional Commits with Chinese descriptions (e.g., `feat(common): 新增项目统一返回结果实体R类`)
+- **Entities**: Use `@Data`, `@TableName`, `@TableId(type = IdType.AUTO)`, `@TableField` for column mapping
+- **Responses**: Always use `R<T>` from `ai-common` for API returns
+- **Local config overrides**: Use `application-local.yml` (untracked), never commit secrets
+- **Unused `com.*` classes**: Ignore `com/domain/` and `com/mapper/` packages under `ai-transfer` -- they are
+  legacy/auto-generated. Only `top.wjstar.*` packages are active.

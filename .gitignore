@@ -40,3 +40,7 @@ build/
 
 ### Config ###
 ai-transfer/src/main/resources/application.yml
+.omc
+
+### Logs ###
+*.log
