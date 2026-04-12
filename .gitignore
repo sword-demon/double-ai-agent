@@ -44,3 +44,5 @@ ai-transfer/src/main/resources/application.yml
 
 ### Logs ###
 *.log
+*.gz
+.idea

@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * @author wxvirus
  */
-@MapperScan("top.wjstar.transfer.mapper")
+@MapperScan({"top.wjstar.transfer.mapper", "top.wjstar.transfer.dao"})
 @SpringBootApplication
 public class TransferApp {
     public static void main(String[] args) {
