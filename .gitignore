@@ -46,3 +46,6 @@ ai-transfer/src/main/resources/application.yml
 *.log
 *.gz
 .idea
+
+### Local MySQL data ###
+/docs/devops/data/
